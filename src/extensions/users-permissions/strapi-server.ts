@@ -1,4 +1,36 @@
 module.exports = (plugin) => {
+  plugin.controllers.user.search = async (ctx) => {
+    if (!ctx.state.user || !ctx.state.user.id) {
+      return (ctx.status = 401);
+    }
+    const { q } = ctx.query;
+    
+    if (!q) {
+      return (ctx.status = 200, ctx.body = []); 
+    }
+
+    try {
+      const searchRes = await strapi.db
+      .query("plugin::users-permissions.user")
+      .findMany({
+        where: { 
+          username: { $containsi: q.trim() },
+        },
+        select: ['id', 'username'] ,
+        populate: {
+          tags: true
+        }
+      });
+
+      ctx.body = searchRes;
+        
+    } catch (err) { 
+      strapi.log.error('User search query failed', err);
+      ctx.status = 500;
+      ctx.body = { error: 'Internal server error' };
+    }
+}
+
   plugin.controllers.user.updateMe = async (ctx) => {
     if (!ctx.state.user || !ctx.state.user.id) {
       return (ctx.status = 401);
@@ -62,6 +94,16 @@ module.exports = (plugin) => {
       policies: [],
     },
   });
+
+  plugin.routes["content-api"].routes.push({
+    method: "GET",
+    path: "/user/search",
+    handler: "user.search",
+    config: {
+      prefix: "",
+      policies: [],
+    },
+  })
 
   return plugin;
 }
