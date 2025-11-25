@@ -78,7 +78,7 @@ module.exports = (plugin) => {
     if (!ctx.state.user || !ctx.state.user.id) {
       return (ctx.response.status = 401);
     }
-    const { id } = ctx.params
+    const id = ctx.state.user.id
     const user = await strapi.db
     .query("plugin::users-permissions.user")
     .findOne({
@@ -155,7 +155,7 @@ module.exports = (plugin) => {
 
   plugin.routes["content-api"].routes.push({
     method: "GET",
-    path: "/user/:id/recommended",
+    path: "/user/me/recommended",
     handler: "user.getRecCourses",
     config: {
       prefix: "",
